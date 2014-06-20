@@ -1,5 +1,5 @@
 $(function() {
-
+  "use strict";
 
   var c = document.getElementById("hyperblob"),
       ctx = c.getContext("2d"),
@@ -82,8 +82,8 @@ $(function() {
       }
 
       nodes.push({
-        x: defaults.x,
-        y: defaults.y,
+        x: defaults.x + getRandomArbitrary(-10, 10),
+        y: defaults.y + getRandomArbitrary(-10, 10),
         vx: getRandomArbitrary(-1, 1),
         vy: getRandomArbitrary(-1, 1),
         tick: i*3,
@@ -112,7 +112,6 @@ $(function() {
   }
 
   function timer() {
-    "use strict";
     var radius = defaults.radius,
         dimensions = defaults.dimensions,
         speed = defaults.speed_limit,
@@ -126,12 +125,10 @@ $(function() {
   }
 
   function calculate_forces(radius, dimensions, speed, viscocity) {
-    "use strict";
     var length = nodes.length;
 
     for (var i = length - 1; i >= 0; i--) {
-      var a = nodes[i],
-          v;
+      var a = nodes[i];
       for (var j = length - 1; j >= 0; j--) {
         if(i !== j) {
           var b = nodes[j],
@@ -139,12 +136,10 @@ $(function() {
               gc = match_factor(a, b, dimensions);
           if (distance > radius) {
             if(distance > (40 * radius)) {
-              v = gravitate(a, b, distance, gc);
+              gravitate(a, b, distance, gc);
             } else {
-              v = repel(a, b, distance);
+              repel(a, b, distance);
             }
-            a.vx = v.vx;
-            a.vy = v.vy;
           }
         }
       }
@@ -154,17 +149,21 @@ $(function() {
   }
 
   function gravitate(a, b, distance, gc) {
-    var force = gc / (distance*distance),
-        vx = a.vx + ((b.x - a.x) * force),
-        vy = a.vy + ((b.y - a.y) * force);
-    return {vx: vx, vy: vy};
+    var force = gc / (distance*distance);
+
+    b.vx = b.vx + ((a.x - b.x) * force);
+    b.vy = b.vy + ((a.y - b.y) * force);
+    a.vx = a.vx + ((b.x - a.x) * force);
+    a.vy = a.vy + ((b.y - a.y) * force);
   }
 
   function repel(a, b, distance) {
-    var force = 2 / (distance*distance),
-        vx = a.vx + ((a.x - b.x) * force),
-        vy = a.vy + ((a.y - b.y) * force);
-    return {vx: vx, vy: vy};
+    var force = 2 / (distance*distance);
+
+    b.vx = b.vx + ((b.x - a.x) * force);
+    b.vy = b.vy + ((b.y - a.y) * force);
+    a.vx = a.vx + ((a.x - b.x) * force);
+    a.vy = a.vy + ((a.y - b.y) * force);
   }
 
   function friction(node, viscocity) {
@@ -178,7 +177,7 @@ $(function() {
   }
 
   function match_factor(a, b, dimensions) {
-    factor = 0.1;
+    var factor = 0.1;
     for (var i = dimensions.length - 1; i >= 0; i--) {
       var dimension = dimensions[i];
       if(a[dimension] === b[dimension]) {
