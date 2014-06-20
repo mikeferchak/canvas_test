@@ -2,7 +2,7 @@ $(function() {
 
   var c = document.getElementById("hyperblob"),
       ctx = c.getContext("2d"),
-      node_count = 1000,
+      node_count = 500,
       canvas_height = $("#hyperblob").innerHeight(),
       canvas_width = $("#hyperblob").innerWidth(),
       max_count = canvas_width / 2,
@@ -20,7 +20,7 @@ $(function() {
         opacity: 1,
         viscocity: 0.9,
         speed_limit: 100,
-        dimensions: ["size", "color", "opacity"]
+        dimensions: ["color", "size"]
       };
 
   function build_nodes() {
@@ -42,24 +42,19 @@ $(function() {
           color = "#000000";
       }
 
-      switch(i % 5) {
+      switch(i % 4) {
         case 1:
-          size = 1;
-          break;
-        case 2:
           size = 2;
           break;
-        case 3:
+        case 2:
           size = 3;
           break;
-        case 4:
+        case 3:
           size = 4;
           break;
-        case 5:
+        case 4:
           size = 5;
           break;
-        default:
-          color = "#000000";
       }
 
       switch(i % 5) {
@@ -82,17 +77,6 @@ $(function() {
           size = "#000000";
       }
 
-      switch(i % 2) {
-        case 1:
-          opacity = 0.5;
-          break;
-        case 2:
-          opacity = 1;
-          break;
-        default:
-          opacity = 1;
-      }
-
       nodes.push({
         x: defaults.x,
         y: defaults.y,
@@ -101,7 +85,7 @@ $(function() {
         tick: i*3,
         color: color,
         size: size,
-        opacity: opacity
+        opacity: 1
       });
     }
   }
@@ -138,19 +122,14 @@ $(function() {
   }
 
   function calculate_forces(radius, dimensions, speed, viscocity) {
-    var a = {},
-        b = {};
-
     for (var i = nodes.length - 1; i >= 0; i--) {
       var node_a = nodes[i];
-      a = {x: node_a.x, y: node_a.y, vx: node_a.vx, vy: node_a.vy}
 
       for (var j = nodes.length - 1; j >= 0; j--) {
         if(i !== j) {
           var node_b = nodes[j],
-              b = {x: node_b.x, y: node_b.y, vx: node_b.vx, vy: node_b.vy}
-              distance = line_distance(a, b),
-              gc = match_factor(i, j, dimensions);
+              distance = line_distance(node_a, node_b),
+              gc = match_factor(node_a, node_b, dimensions);
 
           if (distance > radius) {
             if(distance > (30 * radius)) {
@@ -164,11 +143,8 @@ $(function() {
 
       speed_limit(node_a, speed);
       friction(node_a, viscocity);
-
-      // node_a.vx = a.vx;
-      // node_a.vy = a.vy;
-      // node_b.vx = b.vx;
-      // node_b.vy = b.vy;
+       
+      nodes[i] = node_a;     
     }
   }
 
@@ -200,11 +176,11 @@ $(function() {
     node.vy = (node.vy >= max || node.vy <= -max) ? node.vy / 2 : node.vy;
   }
 
-  function match_factor(i, j, dimensions) {
+  function match_factor(a, b, dimensions) {
     factor = 0.1;
     for (var i = dimensions.length - 1; i >= 0; i--) {
       var dimension = dimensions[i];
-      if(nodes[i][dimension] === nodes[j][dimension]) {
+      if(a[dimension] === b[dimension]) {
         factor = factor + 1;
       }
     };
