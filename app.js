@@ -1,5 +1,6 @@
 $(function() {
 
+
   var c = document.getElementById("hyperblob"),
       ctx = c.getContext("2d"),
       node_count = 500,
@@ -7,6 +8,9 @@ $(function() {
       canvas_width = $("#hyperblob").innerWidth(),
       max_count = canvas_width / 2,
       nodes = [],
+      fuzz_factor = node_count / 500,
+      target_interval = node_count / 100,
+      zoom = 500 / node_count,
       defaults = {
         x: x_origin(),
         y: y_origin(),
@@ -80,8 +84,8 @@ $(function() {
       nodes.push({
         x: defaults.x,
         y: defaults.y,
-        vx: 1 * getRandomArbitrary(-1, 1),
-        vy: 1 * getRandomArbitrary(-1, 1),
+        vx: getRandomArbitrary(-1, 1),
+        vy: getRandomArbitrary(-1, 1),
         tick: i*3,
         color: color,
         size: size,
@@ -96,19 +100,19 @@ $(function() {
 
       node.x = node.x + node.vx;
       node.y = node.y + node.vy;
-      draw_node(node.x, node.y, node.size, node.color, defaults.scale, node.opacity);
+      draw_node(node.x, node.y, node.size, node.color, defaults.scale);
     }
   }
 
-  function draw_node(x, y, radius, color, scale, opacity) {
+  function draw_node(x, y, radius, color, scale) {
     ctx.beginPath();
     ctx.arc(x,y,radius,0,2*Math.PI);
     ctx.fillStyle = color;
-    ctx.globalAlpha = opacity;
     ctx.fill();
   }
 
   function timer() {
+    "use strict";
     var radius = defaults.radius,
         dimensions = defaults.dimensions,
         speed = defaults.speed_limit,
@@ -118,52 +122,49 @@ $(function() {
       ctx.clearRect( 0, 0, 2000, 2000);
       calculate_forces(radius, dimensions, speed, viscocity);
       redraw_nodes(nodes);
-    }, 10 );
+    }, target_interval );
   }
 
   function calculate_forces(radius, dimensions, speed, viscocity) {
-    for (var i = nodes.length - 1; i >= 0; i--) {
-      var node_a = nodes[i];
+    "use strict";
+    var length = nodes.length;
 
-      for (var j = nodes.length - 1; j >= 0; j--) {
+    for (var i = length - 1; i >= 0; i--) {
+      var a = nodes[i],
+          v;
+      for (var j = length - 1; j >= 0; j--) {
         if(i !== j) {
-          var node_b = nodes[j],
-              distance = line_distance(node_a, node_b),
-              gc = match_factor(node_a, node_b, dimensions);
-
+          var b = nodes[j],
+              distance = line_distance(a, b),
+              gc = match_factor(a, b, dimensions);
           if (distance > radius) {
-            if(distance > (30 * radius)) {
-              gravitate(node_a, node_b, distance, gc);
+            if(distance > (40 * radius)) {
+              v = gravitate(a, b, distance, gc);
             } else {
-              repel(node_a, node_b, distance);
+              v = repel(a, b, distance);
             }
+            a.vx = v.vx;
+            a.vy = v.vy;
           }
         }
       }
-
-      speed_limit(node_a, speed);
-      friction(node_a, viscocity);
-       
-      nodes[i] = node_a;     
+      speed_limit(a, speed);
+      friction(a, viscocity);
     }
   }
 
   function gravitate(a, b, distance, gc) {
-    var force = gc / (distance*distance);
-
-    b.vx = b.vx + ((a.x - b.x) * force);
-    b.vy = b.vy + ((a.y - b.y) * force);
-    a.vx = a.vx + ((b.x - a.x) * force);
-    a.vy = a.vy + ((b.y - a.y) * force);
+    var force = gc / (distance*distance),
+        vx = a.vx + ((b.x - a.x) * force),
+        vy = a.vy + ((b.y - a.y) * force);
+    return {vx: vx, vy: vy};
   }
 
   function repel(a, b, distance) {
-    var force = 2 / (distance*distance);
-
-    b.vx = b.vx + ((b.x - a.x) * force);
-    b.vy = b.vy + ((b.y - a.y) * force);
-    a.vx = a.vx + ((a.x - b.x) * force);
-    a.vy = a.vy + ((a.y - b.y) * force);
+    var force = 2 / (distance*distance),
+        vx = a.vx + ((a.x - b.x) * force),
+        vy = a.vy + ((a.y - b.y) * force);
+    return {vx: vx, vy: vy};
   }
 
   function friction(node, viscocity) {
@@ -197,6 +198,10 @@ $(function() {
 
   function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
+  }
+
+  function fuzz(factor) {
+    return Math.floor(getRandomArbitrary(1, factor));
   }
 
   function line_distance( point1, point2 ) {
