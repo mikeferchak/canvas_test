@@ -1,9 +1,10 @@
-/*body {
-  width: 100%;
-}*/
+html, body {
+  height: 99%;
+}
 
 #hyperblob {
   display: block;
   height: 100%;
-  width: 100%;
+  width: 95%;
+  margin: 0 auto;
 }
